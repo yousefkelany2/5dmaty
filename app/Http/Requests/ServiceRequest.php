@@ -29,7 +29,7 @@ class ServiceRequest extends FormRequest
             'description_ar' => 'nullable|string',
             'description_en' => 'nullable|string',
             'image' => 'nullable|image',
-            'tags' => 'nullable|array',
+            'tags' => 'nullable',
         ];
     }
 }

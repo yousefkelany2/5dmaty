@@ -62,10 +62,15 @@ public function checkStatus($id)
         ], 404);
     }
 
-    $statusMessage = $order->status === 'completed'
-        ? 'تم تنفيذ الطلب بنجاح ✅'
-        : 'طلبك قيد التنفيذ... ⏳';
+   $statusMessages = [
+        'pending' => 'طلبك قيد الانتظار ⏳',
+        'confirmed' => 'تم تأكيد الطلب ✅',
+        'in_progress' => 'طلبك قيد التنفيذ 🔧',
+        'completed' => 'تم تنفيذ الطلب بنجاح 🎉',
+        'cancelled' => 'تم إلغاء الطلب ❌',
+    ];
 
+    $statusMessage = $statusMessages[$order->status] ?? 'حالة الطلب غير معروفة.';
     return response()->json([
         'status' => $order->status,
         'message' => $statusMessage,
@@ -77,7 +82,7 @@ public function updateStatus(Request $request, $id)
 
 
     $request->validate([
-        'status' => 'required|in:pending,completed',
+       'status' => 'required|in:pending,confirmed,in_progress,completed,cancelled',
     ]);
 
     $order = Order::findOrFail($id);

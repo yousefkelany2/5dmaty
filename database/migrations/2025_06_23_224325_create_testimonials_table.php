@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained("users")->onDelete('cascade');; // لو testimonial من يوزر
             $table->string('name'); // أو ممكن تسيبه فارغ لو من الأدمن
             $table->text('content');
+            $table->unsignedTinyInteger('rating')->default(5)->comment('Rating from 1 to 5');
             $table->boolean('approved')->default(false);
             $table->timestamps();
         });

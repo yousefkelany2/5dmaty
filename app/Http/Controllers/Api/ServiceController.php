@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-
 use App\Models\Service;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -21,21 +20,29 @@ class ServiceController extends Controller
 
         return response()->json($query->get());
     }
+
     public function show($id)
     {
         $service = Service::findOrFail($id);
-        if (!$service) {
+        if (! $service) {
             return response()->json(['message' => 'Service not found.'], 404);
         }
+
+
         return response()->json($service);
     }
 
     public function store(ServiceRequest $request)
     {
-
         $imagePath = null;
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('services', 'public');
+        }
+
+        $tags = is_string($request->tags) ? json_decode($request->tags, true) : $request->tags;
+
+        if (!is_array($tags)) {
+            return response()->json(['message' => 'Invalid tags format. Must be JSON array.'], 422);
         }
 
         $service = Service::create([
@@ -46,7 +53,7 @@ class ServiceController extends Controller
             'description_ar' => $request->description_ar,
             'description_en' => $request->description_en,
             'image' => $imagePath,
-            'tags' => $request->tags,
+            'tags' => $tags,
         ]);
 
         return response()->json([
@@ -58,10 +65,9 @@ class ServiceController extends Controller
     public function update(Request $request, $id)
     {
         $service = Service::findOrFail($id);
-        if (!$service) {
+        if (! $service) {
             return response()->json(['message' => 'Service not found.'], 404);
         }
-
 
 
         $request->validate([
@@ -71,19 +77,26 @@ class ServiceController extends Controller
             'description_ar' => 'nullable|string',
             'description_en' => 'nullable|string',
             'image' => 'nullable|image',
-            'tags' => 'nullable|array',
+            'tags' => 'nullable',
         ]);
 
-        $data = $request->except('image');
+        $data = $request->except('image', 'tags');
 
         if ($request->hasFile('image')) {
-            // 🗑️ امسح الصورة القديمة لو موجودة
             if ($service->image && Storage::disk('public')->exists($service->image)) {
                 Storage::disk('public')->delete($service->image);
             }
-
-            // ✅ خزن الصورة الجديدة
             $data['image'] = $request->file('image')->store('services', 'public');
+        }
+
+        if ($request->has('tags')) {
+            $tags = is_string($request->tags) ? json_decode($request->tags, true) : $request->tags;
+
+            if (!is_array($tags)) {
+                return response()->json(['message' => 'Invalid tags format. Must be JSON array.'], 422);
+            }
+
+            $data['tags'] = $tags;
         }
 
         $service->update($data);
@@ -94,11 +107,10 @@ class ServiceController extends Controller
         ]);
     }
 
-
     public function destroy($id)
     {
         $service = Service::findOrFail($id);
-        if (!$service) {
+        if (! $service) {
             return response()->json(['message' => 'Service not found.'], 404);
         }
 

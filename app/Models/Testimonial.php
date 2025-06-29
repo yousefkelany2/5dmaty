@@ -11,6 +11,7 @@ class Testimonial extends Model
         'user_id',
         'name',
         'content',
+        'rating',
         'approved',
     ];
     public function user()

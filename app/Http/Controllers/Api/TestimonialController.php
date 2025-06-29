@@ -20,6 +20,7 @@ class TestimonialController extends Controller
     {
         $request->validate([
             'content' => 'required|string|max:1000',
+            'rating' => 'required|integer|min:1|max:5',
         ]);
         $user = auth('api')->user();
 
@@ -34,6 +35,7 @@ class TestimonialController extends Controller
             'user_id' => $user->id,
             'name' => $user->name,
             'content' => $request->content,
+            'rating' => $request->rating,
             'approved' => false, // لسه محتاج موافقة الأدمن
         ]);
 

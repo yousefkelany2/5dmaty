@@ -10,19 +10,25 @@ use Illuminate\Support\Facades\Storage;
 class CategoryController extends Controller
 {
     public function index()
-    {
-        $categories = Category::all();
+    { 
+        $categories = Category::all()->map(function ($cat) {
+            $cat->image = $cat->image_url; // رجّع الرابط بدل الاسم
+            return $cat;
+        });
+
         return response()->json($categories);
     }
     public function show($id)
     {
-        $category = Category::findOrFail($id);
+        $category = Category::find($id);
         if (!$category) {
-        return response()->json([
-            'message' => 'Category not found',
-            'code' => 404
-        ], 404);
-    }
+            return response()->json([
+                'message' => 'Category not found',
+                'code' => 404
+            ], 404);
+        }
+
+        $category->image = $category->image_url;
         return response()->json($category);
     }
 
@@ -52,12 +58,12 @@ class CategoryController extends Controller
     {
         // 1. هات الكاتيجوري أو ارجع 404
         $category = Category::findOrFail($id);
-         if (!$category) {
-        return response()->json([
-            'message' => 'Category not found',
-            'code' => 404
-        ], 404);
-    }
+        if (!$category) {
+            return response()->json([
+                'message' => 'Category not found',
+                'code' => 404
+            ], 404);
+        }
 
         // 2. فاليديشن للحقول
         $request->validate([
@@ -94,12 +100,12 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         $category = Category::findOrFail($id);
-         if (!$category) {
-        return response()->json([
-            'message' => 'Category not found',
-            'code' => 404
-        ], 404);
-    }
+        if (!$category) {
+            return response()->json([
+                'message' => 'Category not found',
+                'code' => 404
+            ], 404);
+        }
 
         if ($category->image && Storage::disk('public')->exists($category->image)) {
             Storage::disk('public')->delete($category->image);
@@ -109,8 +115,5 @@ class CategoryController extends Controller
         $category->delete();
 
         return response()->json(['message' => 'Category and its image deleted']);
-
-
-      
     }
 }

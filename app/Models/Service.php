@@ -29,4 +29,10 @@ class Service extends Model
     {
         return $this->hasMany(Order::class);
     }
+     protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute()
+    {
+        return $this->image ? asset('storage/' . $this->image) : null;
+    }
 }
