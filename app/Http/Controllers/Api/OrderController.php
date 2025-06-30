@@ -139,7 +139,7 @@ class OrderController extends Controller
         }
 
         // تأكد إن الطلب ملك لليوزر ده
-        if ($order->user_id !== $user->id) {
+        if ($order->user_id !== $user->id  && $user->role !== 'admin') {
             return response()->json(['message' => 'غير مصرح لك بتعديل هذا الطلب.'], 403);
         }
 
@@ -160,7 +160,7 @@ class OrderController extends Controller
     }
     public function destroy($id)
     {
-        
+
         $user = auth('api')->user();
         if (!$user) {
             return response()->json([
@@ -175,7 +175,7 @@ class OrderController extends Controller
             ], 404);
         }
 
-        if ($order->user_id !== $user->id) {
+        if ($order->user_id !== $user->id  && $user->role !== 'admin') {
             return response()->json(['message' => 'غير مصرح لك بحذف هذا الطلب.'], 403);
         }
 
