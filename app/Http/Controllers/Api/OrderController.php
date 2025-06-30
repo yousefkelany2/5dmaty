@@ -10,91 +10,177 @@ use App\Http\Requests\OrderRequest;
 
 class OrderController extends Controller
 {
-public function index()
-{
-    $orders = Order::with('service')->latest()->get();
-    return response()->json($orders);
-}
-
-
-public function store(OrderRequest $request)
-{
-
-
-    $order = Order::create([
-        'service_id' => $request->service_id,
-        'name' => $request->name,
-        'phone' => $request->phone,
-        'email' => $request->email,
-        'status' => 'pending',
-    ]);
-
-    $service = Service::find($request->service_id);
-
-    if (!$service) {
-        return response()->json([
-            'message' => 'الخدمة غير موجودة.',
-        ], 404);
+    public function index()
+    {
+        $orders = Order::with('service')->latest()->get();
+        return response()->json($orders);
     }
 
-    // توليد رسالة WhatsApp
-    $message = "طلب جديد لخدمة: {$service->name_ar}\n"
-        . "الاسم: {$request->name}\n"
-        . "رقم الهاتف: {$request->phone}\n"
-        . "البريد الإلكتروني: " . ($request->email ?? 'غير مذكور');
 
-   $adminPhone = '201065189050'; // رقم الأدمن بصيغة دولية من غير +
-   $whatsappUrl = "https://wa.me/{$adminPhone}?text=" . urlencode($message);
+    public function store(OrderRequest $request)
+    {
 
-    return response()->json([
-        'message' => 'تم استلام الطلب بنجاح.',
-        'redirect_whatsapp' => $whatsappUrl,
-        'order_id' => $order->id,
-    ]);
-}
+        $user = auth('api')->user();
 
-public function checkStatus($id)
-{
-    $order = Order::findOrFail($id);
-    if (!$order) {
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthorized. Please login first.'
+            ], 401);
+        }
+        $service = Service::find($request->service_id);
+
+        if (!$service) {
+            return response()->json([
+                'message' => 'الخدمة غير موجودة.',
+            ], 404);
+        }
+        $order = Order::create([
+            'service_id' => $request->service_id,
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'phone' => $user->phone,
+            'email' => $user->email,
+            'status' => 'pending',
+        ]);
+
+
+
+
+        // توليد رسالة WhatsApp
+        $message = "طلب جديد لخدمة: {$service->name_ar}\n"
+            . "الاسم: {$request->name}\n"
+            . "رقم الهاتف: {$request->phone}\n"
+            . "البريد الإلكتروني: " . ($request->email ?? 'غير مذكور');
+
+        $adminPhone = '201065189050'; // رقم الأدمن بصيغة دولية من غير +
+        $whatsappUrl = "https://wa.me/{$adminPhone}?text=" . urlencode($message);
+
         return response()->json([
-            'message' => 'الطلب غير موجود.',
-        ], 404);
+            'message' => 'تم استلام الطلب بنجاح.',
+            'redirect_whatsapp' => $whatsappUrl,
+            'order_id' => $order->id,
+        ]);
     }
 
-   $statusMessages = [
-        'pending' => 'طلبك قيد الانتظار ⏳',
-        'confirmed' => 'تم تأكيد الطلب ✅',
-        'in_progress' => 'طلبك قيد التنفيذ 🔧',
-        'completed' => 'تم تنفيذ الطلب بنجاح 🎉',
-        'cancelled' => 'تم إلغاء الطلب ❌',
-    ];
+    public function checkStatus($id)
+    {
+        $order = Order::findOrFail($id);
+        if (!$order) {
+            return response()->json([
+                'message' => 'الطلب غير موجود.',
+            ], 404);
+        }
 
-    $statusMessage = $statusMessages[$order->status] ?? 'حالة الطلب غير معروفة.';
-    return response()->json([
-        'status' => $order->status,
-        'message' => $statusMessage,
-    ]);
-}
+        $statusMessages = [
+            'pending' => 'طلبك قيد الانتظار ⏳',
+            'confirmed' => 'تم تأكيد الطلب ✅',
+            'in_progress' => 'طلبك قيد التنفيذ 🔧',
+            'completed' => 'تم تنفيذ الطلب بنجاح 🎉',
+            'cancelled' => 'تم إلغاء الطلب ❌',
+        ];
 
-public function updateStatus(Request $request, $id)
-{
-
-
-    $request->validate([
-       'status' => 'required|in:pending,confirmed,in_progress,completed,cancelled',
-    ]);
-
-    $order = Order::findOrFail($id);
-    if (!$order) {
+        $statusMessage = $statusMessages[$order->status] ?? 'حالة الطلب غير معروفة.';
         return response()->json([
-            'message' => 'الطلب غير موجود.',
-        ], 404);
+            'status' => $order->status,
+            'message' => $statusMessage,
+        ]);
     }
-    $order->update(['status' => $request->status]);
 
-    return response()->json(['message' => 'تم تحديث حالة الطلب']);
-}
+    public function updateStatus(Request $request, $id)
+    {
 
 
+        $request->validate([
+            'status' => 'required|in:pending,confirmed,in_progress,completed,cancelled',
+        ]);
+
+        $order = Order::findOrFail($id);
+        if (!$order) {
+            return response()->json([
+                'message' => 'الطلب غير موجود.',
+            ], 404);
+        }
+        $order->update(['status' => $request->status]);
+
+        return response()->json(['message' => 'تم تحديث حالة الطلب']);
+    }
+    public function myOrders()
+    {
+        $user = auth('api')->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthorized. Please login first.'
+            ], 401);
+        }
+
+        $orders = Order::with('service')
+            ->where('user_id', $user->id)
+            ->latest()
+            ->get();
+
+        return response()->json($orders);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $user = auth('api')->user();
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthorized. Please login first.'
+            ], 401);
+        }
+        $order = Order::findOrFail($id);
+
+        if (!$order) {
+            return response()->json([
+                'message' => 'الطلب غير موجود.',
+            ], 404);
+        }
+
+        // تأكد إن الطلب ملك لليوزر ده
+        if ($order->user_id !== $user->id) {
+            return response()->json(['message' => 'غير مصرح لك بتعديل هذا الطلب.'], 403);
+        }
+
+        // نسمحله يعدل البيانات الأساسية (لو محتاجين)
+        $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'phone' => 'sometimes|required|string|max:255',
+            'email' => 'nullable|email',
+            'service_id' => 'sometimes|exists:services,id',
+        ]);
+
+        $order->update($request->only('name', 'phone', 'email','service_id'));
+
+        return response()->json([
+            'message' => 'تم تعديل الطلب بنجاح.',
+            'order' => $order
+        ]);
+    }
+    public function destroy($id)
+    {
+        
+        $user = auth('api')->user();
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthorized. Please login first.'
+            ], 401);
+        }
+        $order = Order::findOrFail($id);
+
+        if (!$order) {
+            return response()->json([
+                'message' => 'الطلب غير موجود.',
+            ], 404);
+        }
+
+        if ($order->user_id !== $user->id) {
+            return response()->json(['message' => 'غير مصرح لك بحذف هذا الطلب.'], 403);
+        }
+
+        $order->delete();
+
+        return response()->json(['message' => 'تم حذف الطلب بنجاح.']);
+    }
 }

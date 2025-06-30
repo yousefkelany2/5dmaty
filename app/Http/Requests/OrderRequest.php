@@ -23,10 +23,8 @@ class OrderRequest extends FormRequest
     {
         return [
             'service_id' => 'required|exists:services,id',
-            'name' => 'required|string',
-            'phone' => 'required|string',
-            'email' => 'nullable|email',
             
+
         ];
     }
 }

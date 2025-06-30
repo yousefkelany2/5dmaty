@@ -9,7 +9,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\TestimonialController;
 
 Route::prefix('auth')->group(function () {
-     #User
+    #User
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register']);
     Route::post('logout', [AuthController::class, 'logout']);
@@ -27,9 +27,6 @@ Route::prefix('auth')->group(function () {
     Route::get('/orders/{id}/status', [OrderController::class, 'checkStatus']);
     #Testimonial
     Route::get('/testimonials', [TestimonialController::class, 'index']);
-
-
-
 });
 
 Route::prefix('auth')->middleware(['auth:api', 'admin'])->group(function () {
@@ -44,13 +41,19 @@ Route::prefix('auth')->middleware(['auth:api', 'admin'])->group(function () {
     #Orders
     Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
     Route::get('orders', [OrderController::class, 'index']);
-     #Testimonial
+    #Testimonial
     Route::put('/testimonials/{id}/approve', [TestimonialController::class, 'approve']);
-
+    Route::get('/testimonials/all', [TestimonialController::class, 'all']);
 });
 
 Route::prefix('auth')->middleware('auth:api')->group(function () {
-     #Testimonial
+    #Testimonial
     Route::post('/testimonials', [TestimonialController::class, 'store']);
-
+    Route::get('/testimonials/my', [TestimonialController::class, 'myTestimonials']);
+    Route::put('/testimonials/{id}', [TestimonialController::class, 'update']);
+    Route::delete('/testimonials/{id}', [TestimonialController::class, 'destroy']);
+    #Order
+    Route::get('/orders/my', [OrderController::class, 'myOrders']);
+    Route::put('/orders/{id}', [OrderController::class, 'update']);
+    Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
 });
