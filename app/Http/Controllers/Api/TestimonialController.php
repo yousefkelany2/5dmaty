@@ -58,6 +58,11 @@ class TestimonialController extends Controller
                 'message' => 'Testimonial not found.'
             ], 404);
         }
+        if ($request->approved == 2) {
+        $testimonial->delete();
+
+        return response()->json(['message' => 'تم رفض التوصية وحذفها نهائيًا ❌']);
+    }
       $testimonial->update(['approved' => $request->approved]);
 
     $statusMessages = [
