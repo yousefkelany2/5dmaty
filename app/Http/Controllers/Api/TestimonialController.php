@@ -98,7 +98,7 @@ public function update(Request $request, $id)
     $testimonial = Testimonial::findOrFail($id);
 
     // لو الميزة مخصصة لليوزر فقط يعدل توصيته
-    if ($testimonial->user_id !== $user->id) {
+    if ($testimonial->user_id !== $user->id  && $user->role !== 'admin') {
         return response()->json(['message' => 'غير مصرح لك بالتعديل على هذه التوصية.'], 403);
     }
 
@@ -120,7 +120,7 @@ public function destroy($id)
     $testimonial = Testimonial::findOrFail($id);
 
     // لو مستخدم عادي فقط يحذف بتاعه
-    if ($user->id !== $testimonial->user_id && !$user->is_admin) {
+    if ($user->id !== $testimonial->user_id &&  $user->role !== 'admin') {
         return response()->json(['message' => 'غير مصرح لك بحذف هذه التوصية.'], 403);
     }
 
